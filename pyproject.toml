@@ -1,0 +1,30 @@
+[project]
+name = "tarea-python-ucm"
+version = "0.1.0"
+description = "Trabajo final en Python para Desarrolladores de la UCM."
+readme = "README.md"
+authors = [
+    { name = "Cesar Alejandro", email = "cesardro.98@gmail.com" }
+]
+requires-python = ">=3.14"
+dependencies = [
+    "matplot>=0.1.9",
+    "numpy>=2.5.3",
+    "pandas>=3.0.6",
+    "requests>=2.34.2",
+]
+
+[project.scripts]
+tarea-python-ucm = "tarea_python_ucm:main"
+
+[build-system]
+requires = ["uv_build>=0.12.16,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "coverage>=7.16.1",
+    "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
+    "pytest-datafiles>=3.0.1",
+]
