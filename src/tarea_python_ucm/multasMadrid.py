@@ -22,4 +22,4 @@ if response.status_code == 200:
 # Accedemos al texto 
 content = io.StringIO(response.text)
 multas = pd.read_csv(content, sep =';', encoding = 'latin1')
-multas.head()
+print(multas.head())
