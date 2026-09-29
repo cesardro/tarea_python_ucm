@@ -326,7 +326,7 @@ class CacheURL(Cache):
         Otherwise download it, store it and return it.
 
         Args:
-            url (str): Name of internet URL.
+            url (str): URL to download.
 
         Returns:
             str: The content of the URL.
@@ -346,7 +346,7 @@ class CacheURL(Cache):
             self.set(self._hash_me(url), response.text)
             return response.text
         except requests.exceptions.RequestException as e:
-            raise CacheError(f"Unable to reach '{url}'")
+            raise CacheError(f"Unable to reach '{url}'", e)
 
 
 class CacheError(Exception):
