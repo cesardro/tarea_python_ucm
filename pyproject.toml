@@ -12,6 +12,7 @@ dependencies = [
     "matplotlib>=3.11.2",
     "numpy>=2.5.3",
     "pandas>=3.0.6",
+    "pathlib>=1.0.1",
     "requests>=2.34.2",
 ]
 
