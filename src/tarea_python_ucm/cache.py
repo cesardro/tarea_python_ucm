@@ -189,7 +189,7 @@ class Cache:
 
     def delete(self, name: str) -> None:
         """
-        Deletes the given name file. If the file does not exists, it does not fail.
+        Deletes the given name file. If the file does not exist, it does not fail.
 
         Args:
             name (str): Name of the stored file.
@@ -263,6 +263,7 @@ class CacheURL(Cache):
 
         Raises:
             CacheError: If url is empty or not a string.
+            CacheError: If url does not exist in cache.
         """
         if not self.exists(url, **kwargs):
             raise CacheError(f"'{url}' does not exist in cache!")
@@ -328,7 +329,7 @@ class CacheURL(Cache):
             url (str): Name of internet URL.
 
         Returns:
-            str: The stored data.
+            str: The content of the URL.
 
         Raises:
             CacheError: If the status code is not 200.
@@ -345,7 +346,7 @@ class CacheURL(Cache):
             self.set(self._hash_me(url), response.text)
             return response.text
         except requests.exceptions.RequestException as e:
-            raise CacheError(f"Unable to reach '{url}'") from e
+            raise CacheError(f"Unable to reach '{url}'")
 
 
 class CacheError(Exception):
