@@ -8,11 +8,10 @@ authors = [
 ]
 requires-python = ">=3.14"
 dependencies = [
-    "matplot>=0.1.9",
+    "beautifulsoup4>=4.15.0",
     "matplotlib>=3.11.2",
     "numpy>=2.5.3",
     "pandas>=3.0.6",
-    "pathlib>=1.0.1",
     "requests>=2.34.2",
 ]
 
