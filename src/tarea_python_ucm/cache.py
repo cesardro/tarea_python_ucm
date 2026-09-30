@@ -346,7 +346,7 @@ class CacheURL(Cache):
             self.set(self._hash_me(url), response.text)
             return response.text
         except requests.exceptions.RequestException as e:
-            raise CacheError(f"Unable to reach '{url}'", e)
+            raise CacheError(f"Unable to reach '{url}': {e}")
 
 
 class CacheError(Exception):
