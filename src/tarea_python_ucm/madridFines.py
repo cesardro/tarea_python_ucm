@@ -5,9 +5,11 @@ Provides the get_url function, the MadridFines class and the MadridError excepti
 """
 
 import requests
+import pandas as pd
 from bs4 import BeautifulSoup
+from .cache import CacheURL, CacheError
 
-ROOT = "https://datos.madrid.es/"
+RAIZ = "https://datos.madrid.es/"
 DOWNLOAD = "https://datos.madrid.es/dataset/210104-0-multas-circulacion-detalle/downloads"
 
 
@@ -53,11 +55,70 @@ def get_url(year: int, month: int) -> str:
             found = a.get("href")
     if found is None:
         raise MadridError(f"'{looking_for}' not found.")
-    return ROOT + found.lstrip("/")
+    return RAIZ + found.lstrip("/")
 
 
 class MadridFines:
-    """..."""
+    """
+    Downloads, cleans and analyses Madrid traffic fines month by month,
+    using a cache (CacheURL) to avoid downloading the same file twice.
+
+    Args:
+        app_name (str): Name of the application (cache folder).
+        obsolescence (int): Number of days after which a cached file is obsolete.
+
+    Attributes:
+        cacheurl (CacheURL): Object that downloads the CSV files and keeps them in the cache.
+        data (pd.DataFrame): Cleaned fines of all loaded months.
+        loaded (list): (month, year) tuples of the months contained in data.
+
+    Raises:
+        MadridError: If app_name or obsolescence are not valid.
+    """
+
+    def __init__(self, app_name: str, obsolescence: int) -> None:
+        try:
+            self.__cacheurl = CacheURL(app_name, obsolescence)
+        except CacheError as e:
+            raise MadridError(f"Invalid cache configuration: {e}")
+        self.__data = pd.DataFrame()
+        self.__loaded = []
+
+    @property
+    def cacheurl(self) -> CacheURL:
+        """
+        @Property: Gets the object that downloads the CSV files and keeps them in the disk cache.
+
+        Returns:
+            CacheURL: Cache used to download the fines.
+        """
+        return self.__cacheurl
+
+    @property
+    def data(self) -> pd.DataFrame:
+        """
+        @Property: Contains a cleaned DataFrame with all added months from Madrid Fines URL.
+
+        The DataFrame is empty until a month is added with 'add' method. A copy is returned, so
+        changes made to it do not affect the original DataFrame.
+
+        Returns:
+            pd.DataFrame: Cleaned DataFrame with all months added.
+        """
+        return self.__data.copy()
+
+    @property
+    def loaded(self) -> list:
+        """
+        @Property: Gets the months loaded in data.
+
+        The list is empty until a month and year is added. A copy is returned, so
+        changes made to it do not affect the object.
+
+        Returns:
+            list: (month, year) tuples of the months loaded in data.
+        """
+        return self.__loaded.copy()
 
 
 class MadridError(Exception):

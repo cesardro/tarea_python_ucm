@@ -208,6 +208,24 @@ class Cache:
             if child.is_file():
                 child.unlink()
 
+    def __str__(self) -> str:
+        """
+        Informal, readable representation of the cache.
+
+        Returns:
+            str: String for user to visualize.
+        """
+        return f"{type(self).__name__}-{self.app_name},\nObsolescence of {self.obsolescence} days.\nPath in {self.cache_dir}."
+
+    def __repr__(self) -> str:
+        """
+        Formal representation that allows recreating the object.
+
+        Returns:
+            str: Expression that recreates the object.
+        """
+        return f"{type(self).__name__}('{self.app_name}', {self.obsolescence})"
+
 
 class CacheURL(Cache):
     """
