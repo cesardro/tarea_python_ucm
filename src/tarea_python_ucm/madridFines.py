@@ -53,6 +53,7 @@ def get_url(year: int, month: int) -> str:
     for a in links:
         if looking_for in a.get_text():
             found = a.get("href")
+            break
     if found is None:
         raise MadridError(f"'{looking_for}' not found.")
     return RAIZ + found.lstrip("/")
