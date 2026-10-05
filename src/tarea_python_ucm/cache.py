@@ -202,7 +202,7 @@ class Cache:
 
     def clear(self) -> None:
         """
-        Deletes all files in path for the specific application. 
+        Deletes all files in path for the specific application.
         """
         for child in Path(self.cache_dir).iterdir():
             if child.is_file():
@@ -340,7 +340,7 @@ class CacheURL(Cache):
 
     def get(self, url: str) -> str:
         """
-        Return the content of the URL: from the cache if it is stored and not obsolete. 
+        Return the content of the URL: from the cache if it is stored and not obsolete.
         Otherwise download it, store it and return it.
 
         Args:
