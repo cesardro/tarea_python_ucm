@@ -145,7 +145,7 @@ uv run python tests/test_cache.py             # un fichero concreto
   - `Cache`: validación del constructor, propiedades, `__repr__`/`__str__`, guardar y leer, sobrescribir, nombres y datos inválidos, `exists`, nombres inexistentes, edad, obsolescencia, `delete` y `clear`.
   - `CacheURL`: el hash (32 caracteres, independiente del orden de los kwargs), la primera descarga, la segunda vez desde la caché (1 sola llamada), volver a descargar si está obsoleto, 404, error de red y `delete`.
 - **`test_madridFines.py`:**
-  - `get_url`: URL de «Descarga» de diciembre de 2024 y de mayo de 2019 (la CSV, no la TXT); fechas inválidas sin llamar a la web; mes no publicado.
+  - `get_url`: fechas inválidas sin llamar a la web y sin conexión. En el resto de tests se sustituye por un `get_url` simulado que devuelve la URL de los CSV de prueba.
   - `MadridFines`:
     - constructor y propiedades (copias);
     - `load` (sin limpiar, error de descarga → `MadridError`);

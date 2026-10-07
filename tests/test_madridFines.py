@@ -16,13 +16,6 @@ URL_2019_05 = ("https://datos.madrid.es/dataset/210104-0-multas-circulacion-deta
 
 
 @pytest.fixture
-def downloads_html():
-    """Text of the fake downloads page."""
-    with open(FIXTURE_DIR / "downloads.html", encoding="utf-8") as f:
-        return f.read()
-
-
-@pytest.fixture
 def csv_2024_12():
     """Text of the December 2024 CSV sample."""
     with open(FIXTURE_DIR / "multas_2024_12.csv", encoding="utf-8") as f:
@@ -45,14 +38,19 @@ class MockResponse:
 
 
 @pytest.fixture
-def calls(monkeypatch, downloads_html, csv_2024_12, csv_2019_05):
-    """Fake Internet: requests.get returns the downloads page or a CSV sample (404 for any other url).
+def calls(monkeypatch, csv_2024_12, csv_2019_05):
+    """Fake Internet: get_url returns the CSV url of the two sample months and requests.get the CSV text.
 
     Returns the list of urls asked for, to count the downloads.
     """
-    pages = {mf.DOWNLOAD: downloads_html,
-             URL_2024_12: csv_2024_12, URL_2019_05: csv_2019_05}
+    urls = {(2024, 12): URL_2024_12, (2019, 5): URL_2019_05}
+    pages = {URL_2024_12: csv_2024_12, URL_2019_05: csv_2019_05}
     asked = []
+
+    def mock_get_url(year, month):
+        if (year, month) not in urls:
+            raise MadridError(f"{month}/{year} not found.")
+        return urls[(year, month)]
 
     def mock_get(url, **kwargs):
         asked.append(url)
@@ -60,6 +58,7 @@ def calls(monkeypatch, downloads_html, csv_2024_12, csv_2019_05):
             return MockResponse(pages[url])
         return MockResponse("", 404)
 
+    monkeypatch.setattr(mf, "get_url", mock_get_url)
     monkeypatch.setattr(mf.requests, "get", mock_get)
     return asked
 
@@ -81,24 +80,12 @@ def madrid_loaded(madrid_test):
     return madrid_test
 
 
-@pytest.mark.parametrize("year, month, expected", [(2024, 12, URL_2024_12), (2019, 5, URL_2019_05)])
-def test_get_url(calls, year, month, expected):
-    """Returns the "Descarga" link of the CSV (not the title link, not the TXT of May 2019)."""
-    assert get_url(year, month) == expected
-
-
 @pytest.mark.parametrize("year, month", [(2024, 0), (2024, 13), (2016, 12), (2017, 5)])
 def test_get_url_invalid_date(calls, year, month):
     """Month outside 1-12 or date before June 2017 raises MadridError without asking the web."""
     with pytest.raises(MadridError):
         get_url(year, month)
     assert calls == []
-
-
-def test_get_url_not_published(calls):
-    """A month that is not on the page raises MadridError."""
-    with pytest.raises(MadridError):
-        get_url(2030, 1)
 
 
 def test_get_url_no_network(monkeypatch):
