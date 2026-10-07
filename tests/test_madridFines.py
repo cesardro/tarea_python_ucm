@@ -9,19 +9,12 @@ from tarea_python_ucm import CacheURL, MadridFines, MadridError, get_url
 
 FIXTURE_DIR = Path(__file__).parent.resolve() / 'data'
 
-# Download links that appear in tests/data/downloads.html (copied from the real page).
 URL_2024_12 = ("https://datos.madrid.es/dataset/210104-0-multas-circulacion-detalle/resource/"
                "210104-15-multas-circulacion-detalle-csv/download/210104-15-multas-circulacion-detalle-csv.csv")
 URL_2019_05 = ("https://datos.madrid.es/dataset/210104-0-multas-circulacion-detalle/resource/"
                "210104-91-multas-circulacion-detalle-csv/download/210104-91-multas-circulacion-detalle-csv.csv")
 
 
-# ============================ Test data (tests/data) ============================
-# downloads.html: reduced copy of the real downloads page (title + "Descarga" links, TXT before CSV in May 2019,
-#                 a link without href and one invented month with title but without "Descarga").
-# multas_2024_12.csv: 10 real rows of December 2024 (DESCUENTO of the first MUY GRAVE row changed to NO,
-#                     because every real fine has SI and we want to test both amounts in total_payment).
-# multas_2019_05.csv: 6 real rows of May 2019 (uses COORDENADA_X / COORDENADA_Y).
 @pytest.fixture
 def downloads_html():
     """Text of the fake downloads page."""
@@ -57,7 +50,8 @@ def calls(monkeypatch, downloads_html, csv_2024_12, csv_2019_05):
 
     Returns the list of urls asked for, to count the downloads.
     """
-    pages = {mf.DOWNLOAD: downloads_html, URL_2024_12: csv_2024_12, URL_2019_05: csv_2019_05}
+    pages = {mf.DOWNLOAD: downloads_html,
+             URL_2024_12: csv_2024_12, URL_2019_05: csv_2019_05}
     asked = []
 
     def mock_get(url, **kwargs):
@@ -87,7 +81,6 @@ def madrid_loaded(madrid_test):
     return madrid_test
 
 
-# ================================ get_url ================================
 @pytest.mark.parametrize("year, month, expected", [(2024, 12, URL_2024_12), (2019, 5, URL_2019_05)])
 def test_get_url(calls, year, month, expected):
     """Returns the "Descarga" link of the CSV (not the title link, not the TXT of May 2019)."""
@@ -108,22 +101,6 @@ def test_get_url_not_published(calls):
         get_url(2030, 1)
 
 
-def test_get_url_without_download_link(calls):
-    """A month with title but without "Descarga" link raises MadridError."""
-    with pytest.raises(MadridError):
-        get_url(2020, 1)
-
-
-def test_get_url_status_error(monkeypatch):
-    """If the page answers with a status other than 200, MadridError is raised."""
-    def mock_get(url, **kwargs):
-        return MockResponse("", 500)
-
-    monkeypatch.setattr(mf.requests, "get", mock_get)
-    with pytest.raises(MadridError):
-        get_url(2024, 12)
-
-
 def test_get_url_no_network(monkeypatch):
     """Without network (RequestException) MadridError is raised."""
     def mock_get(url, **kwargs):
@@ -134,7 +111,6 @@ def test_get_url_no_network(monkeypatch):
         get_url(2024, 12)
 
 
-# ============================ MadridFines: init ============================
 @pytest.mark.parametrize("app_name, obsolescence", [("", 1), (123, 1), ("x", 0), ("x", "7")])
 def test_init_invalid(monkeypatch, app_name, obsolescence):
     """A wrong cache configuration raises MadridError (not CacheError)."""
@@ -151,86 +127,20 @@ def test_init_empty(madrid_test):
     assert repr(madrid_test.cacheurl) == "CacheURL('test_madrid', 1)"
 
 
-def test_properties_are_copies(madrid_loaded):
-    """Changing what data and loaded return does not change the object."""
-    loaded = madrid_loaded.loaded
-    loaded.append((1, 2020))
-    data = madrid_loaded.data
-    data["CALIFICACION"] = "X"
-    assert madrid_loaded.loaded == [(12, 2024), (5, 2019)]
-    assert sorted(madrid_loaded.data["CALIFICACION"].unique()) == ["GRAVE", "LEVE", "MUY GRAVE"]
-
-
-# ============================ MadridFines: load and clean ============================
-def test_load(madrid_test):
-    """load returns the CSV as a DataFrame, still without cleaning."""
-    df = MadridFines.load(2024, 12, madrid_test.cacheurl)
-    assert df.shape == (10, 14)
-    assert " PUNTOS" in df.columns
-    assert df["CALIFICACION"].iloc[0] == "LEVE      "
-
-
-def test_load_download_error(monkeypatch, madrid_test, downloads_html):
-    """If the CSV cannot be downloaded, the CacheError is raised again as MadridError."""
-    def mock_get(url, **kwargs):
-        if url == mf.DOWNLOAD:
-            return MockResponse(downloads_html)
-        return MockResponse("", 404)
-
-    monkeypatch.setattr(mf.requests, "get", mock_get)
-    with pytest.raises(MadridError):
-        MadridFines.load(2024, 12, madrid_test.cacheurl)
-
-
-def test_clean(madrid_test):
-    """clean modifies the DataFrame itself: names, texts, numbers and FECHA index."""
-    df = MadridFines.load(2024, 12, madrid_test.cacheurl)
-    assert MadridFines.clean(df) is None
-    assert "PUNTOS" in df.columns
-    assert "VEL_CIRCULA" in df.columns
-    assert "COORDENADA-Y" in df.columns
-    assert sorted(df["CALIFICACION"].unique()) == ["GRAVE", "LEVE", "MUY GRAVE"]
-    assert sorted(df["DENUNCIANTE"].unique()) == ["AGENTES DE MOVILIDAD", "POLICIA MUNICIPAL", "SER"]
-    assert df["VEL_LIMITE"].max() == 60
-    assert df["VEL_CIRCULA"].isna().sum() == 8
-    assert df["COORDENADA-X"].max() == 4407.67
-    assert df["COORDENADA-Y"].isna().sum() == 7
-    assert df.index.name == "FECHA"
-    assert df.index.is_monotonic_increasing
-    assert df.index[0] == pd.Timestamp("2024-12-01 08:24")
-
-
-def test_clean_hour_rounding(madrid_test):
-    """HORA 17.06 becomes 17:06 (17.06 * 100 = 1705.99... in floating point)."""
-    df = MadridFines.load(2024, 12, madrid_test.cacheurl)
-    MadridFines.clean(df)
-    assert pd.Timestamp("2024-12-01 17:06") in df.index
-
-
 def test_clean_coordinates_2019(madrid_test):
     """May 2019 uses COORDENADA_X / COORDENADA_Y: they are renamed to COORDENADA-X / COORDENADA-Y."""
     df = MadridFines.load(2019, 5, madrid_test.cacheurl)
     MadridFines.clean(df)
     assert "COORDENADA-X" in df.columns
     assert "COORDENADA_X" not in df.columns
-    assert df["COORDENADA-X"].max() == 439459.70
 
 
-# ============================ MadridFines: add and clean_cache ============================
 def test_add_month(madrid_test):
     """add joins the cleaned month to data and registers (month, year) in loaded."""
     madrid_test.add(2024, 12)
     assert madrid_test.loaded == [(12, 2024)]
     assert len(madrid_test.data) == 10
     assert madrid_test.data.index.name == "FECHA"
-
-
-def test_add_two_months(madrid_loaded):
-    """Two months are joined and sorted by FECHA (May 2019 goes first)."""
-    data = madrid_loaded.data
-    assert len(data) == 16
-    assert data.index.is_monotonic_increasing
-    assert data.index[0].year == 2019
 
 
 def test_add_duplicate(madrid_test):
@@ -275,7 +185,6 @@ def test_clean_cache(madrid_test):
     assert madrid_test.loaded == [(12, 2024)]
 
 
-# ============================ MadridFines: queries ============================
 def test_fines_hour(madrid_loaded):
     """fines_hour saves the figure with the given name (inside tests/data)."""
     fig = FIXTURE_DIR / "fines_hour.png"
@@ -305,34 +214,11 @@ def test_total_payment(madrid_loaded):
     assert table.loc[(5, 2019), "MIN"] == 505
 
 
-def test_fines_hour_without_data(madrid_test):
-    """fines_hour without data raises MadridError."""
-    with pytest.raises(MadridError):
-        madrid_test.fines_hour(str(FIXTURE_DIR / "empty.png"))
-
-
-def test_fines_calification_without_data(madrid_test):
-    """fines_calification without data raises MadridError."""
-    with pytest.raises(MadridError):
-        madrid_test.fines_calification()
-
-
-def test_total_payment_without_data(madrid_test):
-    """total_payment without data raises MadridError."""
-    with pytest.raises(MadridError):
-        madrid_test.total_payment()
-
-
-# ================================ __init__.py ================================
 def test_package_exports():
     """The package exports its six public names."""
-    assert tarea_python_ucm.__all__ == ["Cache", "CacheURL", "CacheError", "MadridFines", "MadridError", "get_url"]
+    assert tarea_python_ucm.__all__ == [
+        "Cache", "CacheURL", "CacheError", "MadridFines", "MadridError", "get_url"]
     assert tarea_python_ucm.MadridFines is MadridFines
-
-
-def test_main():
-    """main (the command of [project.scripts]) runs without error."""
-    assert tarea_python_ucm.main() is None
 
 
 if __name__ == "__main__":

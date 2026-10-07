@@ -143,17 +143,17 @@ uv run python tests/test_cache.py             # un fichero concreto
 
 - **`test_cache.py`:**
   - `Cache`: validación del constructor, propiedades, `__repr__`/`__str__`, guardar y leer, sobrescribir, nombres y datos inválidos, `exists`, nombres inexistentes, edad, obsolescencia, `delete` y `clear`.
-  - `CacheURL`: el hash (32 caracteres, independiente del orden de los kwargs), la primera descarga, la segunda vez desde la caché (1 sola llamada), volver a descargar si está obsoleto, 404, error de red, URL no guardada y `delete`.
+  - `CacheURL`: el hash (32 caracteres, independiente del orden de los kwargs), la primera descarga, la segunda vez desde la caché (1 sola llamada), volver a descargar si está obsoleto, 404, error de red y `delete`.
 - **`test_madridFines.py`:**
-  - `get_url`: URL de «Descarga» de diciembre de 2024 y de mayo de 2019 (la CSV, no la TXT); fechas inválidas sin llamar a la web; mes no publicado; mes sin enlace de descarga; status 500; sin red.
+  - `get_url`: URL de «Descarga» de diciembre de 2024 y de mayo de 2019 (la CSV, no la TXT); fechas inválidas sin llamar a la web; mes no publicado.
   - `MadridFines`:
     - constructor y propiedades (copias);
     - `load` (sin limpiar, error de descarga → `MadridError`);
-    - `clean` (nombres, textos, números, coordenadas de 2019, índice `FECHA`, hora 17.06 → 17:06);
+    - `clean` (nombres, textos, números, coordenadas de 2019, índice `FECHA`);
     - `add` (un mes, dos meses ordenados, duplicado, mes no disponible, año completo, reutiliza la caché);
     - `clean_cache`;
-    - las tres consultas con valores exactos y sin datos.
-  - `__init__.py`: `__all__` y `main()`.
+    - las tres consultas con valores exactos.
+  - `__init__.py`: `__all__`.
 
 ---
 

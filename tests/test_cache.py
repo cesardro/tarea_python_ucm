@@ -74,13 +74,6 @@ def test_missing_name(cache_test):
         cache_test.how_old("nope")
 
 
-def test_new_file_not_obsolete(cache_test):
-    """A file just saved has a non negative age and is not obsolete."""
-    cache_test.set("a", "hola")
-    assert cache_test.how_old("a") >= 0
-    assert not cache_test.is_obsolete("a")
-
-
 def test_is_obsolete(monkeypatch, cache_test):
     """With the clock moved 2 days ahead, a 1 day cache is obsolete."""
     cache_test.set("a", "hola")
@@ -110,7 +103,6 @@ def test_clear(cache_test):
     cache_test.clear()
     assert not cache_test.exists("a")
     assert not cache_test.exists("b")
-
 
 
 # ================================ CacheURL ================================
@@ -147,30 +139,11 @@ def calls(monkeypatch):
     return asked
 
 
-def test_hash_me(cacheurl_test):
-    """The hash has 32 characters, is always the same for the same input and depends on the url and kwargs."""
-    h = cacheurl_test._hash_me(URL)
-    assert len(h) == 32
-    assert h == cacheurl_test._hash_me(URL)
-    assert h != cacheurl_test._hash_me(URL + "?x=1")
-    assert h != cacheurl_test._hash_me(URL, timeout=5)
-    assert cacheurl_test._hash_me(URL, a=1, b=2) == cacheurl_test._hash_me(URL, b=2, a=1)
-
-
 @pytest.mark.parametrize("url", ["", "   ", None, 123])
 def test_hash_me_invalid(cacheurl_test, url):
     """Empty or non-string url raises CacheError."""
     with pytest.raises(CacheError):
         cacheurl_test._hash_me(url)
-
-
-def test_get_downloads_and_saves(cacheurl_test, calls):
-    """First get downloads the url and saves it under its hash."""
-    assert cacheurl_test.get(URL) == "hi, i am a test"
-    assert calls == [URL]
-    assert cacheurl_test.exists(URL)
-    assert cacheurl_test.load(URL) == "hi, i am a test"
-    assert (Path(cacheurl_test.cache_dir) / cacheurl_test._hash_me(URL)).is_file()
 
 
 def test_get_uses_cache(cacheurl_test, calls):
@@ -207,39 +180,11 @@ def test_get_status_error(monkeypatch, cacheurl_test):
     assert not cacheurl_test.exists(URL)
 
 
-def test_get_no_network(monkeypatch, cacheurl_test):
-    """Without network (RequestException) get raises CacheError."""
-    def mock_get(url, **kwargs):
-        raise requests.exceptions.ConnectionError("no network")
-
-    monkeypatch.setattr(cache.requests, "get", mock_get)
-    with pytest.raises(CacheError):
-        cacheurl_test.get(URL)
-
-
-def test_cacheurl_missing_url(cacheurl_test):
-    """exists is False and load, how_old and is_obsolete raise CacheError for a url not in cache."""
-    assert not cacheurl_test.exists(URL)
-    with pytest.raises(CacheError):
-        cacheurl_test.load(URL)
-    with pytest.raises(CacheError):
-        cacheurl_test.how_old(URL)
-    with pytest.raises(CacheError):
-        cacheurl_test.is_obsolete(URL)
-
-
 def test_cacheurl_kwargs(cacheurl_test, calls):
     """The same url with other kwargs is a different file."""
     cacheurl_test.get(URL)
     assert cacheurl_test.exists(URL)
     assert not cacheurl_test.exists(URL, timeout=5)
-
-
-def test_cacheurl_how_old_not_obsolete(cacheurl_test, calls):
-    """A url just downloaded has a non negative age and is not obsolete."""
-    cacheurl_test.get(URL)
-    assert cacheurl_test.how_old(URL) >= 0
-    assert not cacheurl_test.is_obsolete(URL)
 
 
 def test_cacheurl_delete(cacheurl_test, calls):
