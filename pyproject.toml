@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Trabajo final en Python para Desarrolladores de la UCM."
 readme = "README.md"
 authors = [
-    { name = "Cesar Alejandro", email = "cesardro.98@gmail.com" }
+    { name = "Cesar Alejandro Solano Suarez", email = "cesardro.98@gmail.com" }
 ]
 requires-python = ">=3.14"
 dependencies = [
@@ -25,6 +25,7 @@ build-backend = "uv_build"
 [dependency-groups]
 dev = [
     "coverage>=7.16.1",
+    "ipykernel>=7.4.0",
     "pytest>=9.1.1",
     "pytest-cov>=7.1.0",
     "pytest-datafiles>=3.0.1",

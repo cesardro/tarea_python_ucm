@@ -30,7 +30,18 @@ def get_url(year: int, month: int) -> str:
     Raises:
         MadridError: If month not between 1 and 12.
         MadridError: If the date is before June 2017.
-        MadridError: If no download link is found for that month.
+        MadridError: If the downloads page cannot be reached or its status is not 200.
+        MadridError: If the month is not on the page or has no download link.
+
+    Examples:
+        >>> get_url(2024, 13)
+        Traceback (most recent call last):
+            ...
+        tarea_python_ucm.madridFines.MadridError: Month must be between 1 and 12.
+        >>> get_url(2017, 5)
+        Traceback (most recent call last):
+            ...
+        tarea_python_ucm.madridFines.MadridError: Date must be from June 2017.
     """
     if month < 1 or month > 12:
         raise MadridError("Month must be between 1 and 12.")
